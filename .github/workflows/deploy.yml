@@ -1,0 +1,110 @@
+# Check, then deploy to Vercel.
+#
+# The point of running this here rather than leaving it to Vercel's own git integration
+# is the `needs: check` on the deploy job. The git integration builds whatever is pushed,
+# whether or not it compiles or passes; this will not deploy a branch that fails. It also
+# deploys with the team's token, so a push from anyone with write access ships without
+# each committer needing a paid seat on the Vercel team.
+#
+# Requires three repository secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+# The token belongs to solutions-arch and is scoped to the Solution Architects team.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Redeploy by hand. From main this is a production deploy; from any other branch it is
+  # a preview, so nothing reaches production without going through main.
+  workflow_dispatch:
+
+# The default token is read-only in this org, so the preview comment could not be posted.
+# Read the code, write to the pull request, and nothing else.
+permissions:
+  contents: read
+  pull-requests: write
+
+# A second push to the same branch makes the first one irrelevant, so stop it rather than
+# pay for a build nobody will look at. Production is exempt: cancelling a half-finished
+# production deploy is worse than paying for it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  # Pinned to the version va-marketplace-mvp deploys with. A bare `npx vercel` takes
+  # whatever is newest, so the tool that deploys this could change between two runs of
+  # the same commit. Raise it deliberately.
+  VERCEL_CLI: vercel@59.20.0
+  IS_PROD: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # `typecheck` runs `next typegen` first: helpers like LayoutProps are generated into
+      # .next/, which a fresh checkout does not have, so a bare `tsc` fails on them.
+      - name: Types
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      # There are no tests yet. This starts running them as soon as a `test` script exists.
+      - name: Tests
+        run: npm test --if-present
+
+  deploy:
+    # Nothing ships unless the checks pass. This is the whole reason the workflow exists.
+    needs: check
+    runs-on: ubuntu-latest
+    # A fork's pull request cannot read secrets, so a deploy from one would fail
+    # confusingly. Check it, do not deploy it.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    environment:
+      # The env context is not available on this key, unlike in a step's run, so the
+      # test is spelled out here rather than reusing IS_PROD.
+      name: ${{ (github.ref == 'refs/heads/main' && github.event_name != 'pull_request') && 'Production' || 'Preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `vercel pull` fetches the project's environment variables for this target, so the
+      # build on this runner sees what a build on Vercel would.
+      - name: Pull environment
+        run: npx $VERCEL_CLI pull --yes --environment=${{ env.IS_PROD == 'true' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Building here rather than on Vercel means the build log sits beside the test log,
+      # and `--prebuilt` below uploads the output instead of the source.
+      - name: Build
+        run: npx $VERCEL_CLI build ${{ env.IS_PROD == 'true' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          url=$(npx $VERCEL_CLI deploy --prebuilt ${{ env.IS_PROD == 'true' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
+
+      # The preview URL is the thing a reviewer actually wants, and hunting for it in a
+      # job log is friction. Put it on the pull request once, and edit it after that.
+      - name: Comment the preview URL
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: vercel-preview
+          message: |
+            Preview: ${{ steps.deploy.outputs.url }}
+
+            Built from `${{ github.sha }}` after types, lint and tests passed.
