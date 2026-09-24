@@ -7,7 +7,8 @@
 # each committer needing a paid seat on the Vercel team.
 #
 # Requires three repository secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
-# The token belongs to solutions-arch and is scoped to the Solution Architects team.
+# The token belongs to solutions-arch and is scoped to the vam-landing project alone, so
+# a leak reaches nothing else on the Solution Architects team.
 
 name: Deploy
 
@@ -80,20 +81,15 @@ jobs:
           node-version: 22
           cache: npm
 
-      # `vercel pull` fetches the project's environment variables for this target, so the
-      # build on this runner sees what a build on Vercel would.
-      - name: Pull environment
-        run: npx $VERCEL_CLI pull --yes --environment=${{ env.IS_PROD == 'true' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
-
-      # Building here rather than on Vercel means the build log sits beside the test log,
-      # and `--prebuilt` below uploads the output instead of the source.
-      - name: Build
-        run: npx $VERCEL_CLI build ${{ env.IS_PROD == 'true' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
-
+      # Upload the source and let Vercel build it, rather than `vercel pull` + `vercel
+      # build` + `deploy --prebuilt` as va-marketplace-mvp does. VERCEL_TOKEN is scoped to
+      # this one project, and `pull` insists on reading the team, which such a token may
+      # not do; `deploy` is the only command that carries on without it. The build then
+      # runs on Vercel with the project's own environment variables.
       - name: Deploy
         id: deploy
         run: |
-          url=$(npx $VERCEL_CLI deploy --prebuilt ${{ env.IS_PROD == 'true' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(npx $VERCEL_CLI deploy ${{ env.IS_PROD == 'true' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed to $url" >> "$GITHUB_STEP_SUMMARY"
 
