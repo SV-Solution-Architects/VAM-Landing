@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw testimonial videos: the files go to Mux, only the small metadata files are committed
+/videos/*
+!/videos/*.json
+!/videos/.gitkeep
+
+# installers downloaded into the project folder by accident
+*.deb
