@@ -45,6 +45,7 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,6 +67,10 @@ jobs:
     # Nothing ships unless the checks pass. This is the whole reason the workflow exists.
     needs: check
     runs-on: ubuntu-latest
+    # `vercel deploy` waits for the build, and a deployment Vercel refuses to build (a
+    # BLOCKED one) never finishes, so without a cap the job sat for GitHub's six-hour
+    # default and billed every minute of it. A normal deploy takes about two.
+    timeout-minutes: 15
     # A fork's pull request cannot read secrets, so a deploy from one would fail
     # confusingly. Check it, do not deploy it.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
