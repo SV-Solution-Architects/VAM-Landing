@@ -30,4 +30,11 @@ export const MAX_SHORTLIST = 3;
 /** Requested interviews one access payment covers. */
 export const INTERVIEW_CAP = 15;
 
-export const usd = (amount: number) => `$${amount.toLocaleString("en-US")}`;
+const USD = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+/** "$1,000". Whole dollars: none of these fees has cents. */
+export const usd = (amount: number) => USD.format(amount);

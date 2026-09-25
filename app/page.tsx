@@ -13,8 +13,14 @@ import { Stories } from "@/components/landing/stories";
 export default function Home() {
   return (
     <>
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-lg bg-charcoal px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
+        Skip to main content
+      </a>
       <SiteHeader />
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         <Hero />
         <HowItWorks />
         <Stories />

@@ -60,7 +60,10 @@ export function StoryVideo({ story, width, sizes, priority, className }: Props) 
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent showCloseButton={false} className="overflow-hidden bg-black p-0 ring-0 sm:max-w-4xl">
+        <DialogContent
+          showCloseButton={false}
+          className="overflow-hidden overscroll-contain bg-black p-0 ring-0 sm:max-w-4xl"
+        >
           {/* The stock close button is a dark icon, which vanishes against dark footage. */}
           <DialogClose
             aria-label="Close video"

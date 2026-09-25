@@ -1,6 +1,6 @@
 import { CalendarCheckIcon, HandCoinsIcon, ShieldCheckIcon } from "lucide-react";
 import { HERO_STORY, STORIES } from "@/lib/stories";
-import { INTERVIEW_CONFIRM_BUSINESS_DAYS, REPLACEMENT_DAYS } from "@/lib/terms";
+import { INTERVIEW_CONFIRM_BUSINESS_DAYS, MAX_SHORTLIST, REPLACEMENT_DAYS } from "@/lib/terms";
 import { StartBriefLink } from "./cta";
 import { StoryVideo } from "./story-video";
 
@@ -28,8 +28,8 @@ export function Hero() {
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Tell us what keeps landing on your plate and browse the bench the same day. Every
-            VA is vetted before listing. Shortlist up to three, and our placements team books
-            the interviews.
+            VA is vetted before listing. Shortlist up to {MAX_SHORTLIST}, and our placements
+            team books the interviews.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <StartBriefLink />

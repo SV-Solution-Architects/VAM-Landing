@@ -142,8 +142,21 @@
   }
   html {
     @apply font-sans;
-    /* The sticky header is 4rem tall; anchor links should land below it. */
+    /* The sticky header is 4rem tall; anchor links and focused elements land below it. */
     scroll-padding-top: 5rem;
+    /* No double-tap zoom delay on taps, and no grey flash: every control has its own
+       hover and focus-visible states. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p,
+  blockquote {
+    text-wrap: pretty;
   }
   @media (prefers-reduced-motion: no-preference) {
     html {

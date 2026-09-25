@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -16,9 +16,16 @@ export const metadata: Metadata = {
     "Browse vetted virtual assistants the day you sign up and interview within 2 business days. Backed by a 90-day replacement guarantee.",
 };
 
+// The header is white, so the browser chrome on phones matches it.
+export const viewport: Viewport = { themeColor: "#ffffff" };
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
+      <head>
+        {/* Every video still, the hero's included, comes from Mux's image service. */}
+        <link rel="preconnect" href="https://image.mux.com" />
+      </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
