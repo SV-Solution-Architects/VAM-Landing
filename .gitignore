@@ -41,9 +41,13 @@ yarn-error.log*
 next-env.d.ts
 
 # raw testimonial videos: the files go to Mux, only the small metadata files are committed
+# (next-video's own rules, plus the .gitkeep that holds the folder open)
 /videos/*
 !/videos/*.json
+!/videos/*.js
+!/videos/*.ts
 !/videos/.gitkeep
+/public/_next-video
 
 # installers downloaded into the project folder by accident
 *.deb
