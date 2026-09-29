@@ -1,12 +1,6 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
-  ACCESS_FEE,
-  INTERVIEW_CAP,
-  INTERVIEW_CONFIRM_BUSINESS_DAYS,
-  MAX_SHORTLIST,
-  REPLACEMENT_DAYS,
-  usd,
-} from "@/lib/terms";
+import { START_BRIEF_URL } from "@/lib/site";
+import { ACCESS_FEE, INTERVIEW_CAP, INTERVIEW_CONFIRM_BUSINESS_DAYS, MAX_SHORTLIST, REPLACEMENT_DAYS, usd } from "@/lib/terms";
+import { Arrow } from "./brand-symbols";
 
 // Answers restate the marketplace terms, including the one exception to the guarantee,
 // so nothing here promises more than the agreement a client accepts.
@@ -39,24 +33,32 @@ const FAQS = [
 
 export function Faq() {
   return (
-    <section id="faq" className="py-20 md:py-24">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_2fr]">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Questions owners ask</h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Straight answers, taken from the marketplace terms.
-          </p>
+    <section className="band-sec" id="faq" aria-labelledby="faq-title">
+      <div className="wrap">
+        <div className="faq">
+          <div className="faq-side">
+            <p className="eyebrow">FAQ</p>
+            <h2 className="h2" id="faq-title">
+              Questions owners ask.
+            </h2>
+            <p className="sub">Straight answers, taken from the marketplace terms.</p>
+            <a className="btn btn-ghost" href={START_BRIEF_URL} target="_blank" rel="noopener">
+              Start your hiring brief
+              <Arrow />
+            </a>
+          </div>
+          <div className="qa-list">
+            {FAQS.map((item, i) => (
+              <details className="qa" key={item.q} open={i === 0}>
+                <summary>
+                  {item.q}
+                  <span className="pm" aria-hidden="true" />
+                </summary>
+                <div className="qa-body">{item.a}</div>
+              </details>
+            ))}
+          </div>
         </div>
-        <Accordion className="w-full">
-          {FAQS.map((item) => (
-            <AccordionItem key={item.q} value={item.q}>
-              <AccordionTrigger className="py-5 text-left text-base font-semibold">{item.q}</AccordionTrigger>
-              <AccordionContent className="pb-5 text-base leading-relaxed text-muted-foreground">
-                {item.a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
       </div>
     </section>
   );

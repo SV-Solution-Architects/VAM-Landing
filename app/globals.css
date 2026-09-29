@@ -1,22 +1,25 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./styles/landing.css";
 
-@custom-variant dark (&:is(.dark *));
+/* The theme is an attribute on <html>, set before first paint by the inline script in
+   app/layout.tsx. With no stored choice the script resolves the OS preference itself, so
+   the attribute is always present; the prefers-color-scheme block below is a fallback for
+   the moment before the script runs. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* shadcn's init wrote `--font-sans: var(--font-sans)`, which points at itself and
-     falls back to the browser default. The family is loaded by next/font in layout.tsx. */
-  --font-sans: var(--font-jakarta);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-heading: var(--font-jakarta);
-  /* Scale Virtually's two logo colours, plus the warm off-white the sections sit on. */
-  --color-brand: var(--brand);
-  --color-brand-ink: var(--brand-ink);
+  --font-sans: var(--f-sans);
+  --font-mono: var(--f-mono);
+  --font-heading: var(--f-sans);
+  /* Scale Virtually's two logo colours, and the darker orange that passes as text. */
+  --color-brand: var(--orange);
+  --color-brand-ink: var(--orange-ink);
   --color-charcoal: var(--charcoal);
-  --color-cream: var(--cream);
+  --color-cream: var(--surface-2);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -36,8 +39,10 @@
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
+  /* The landing uses --muted for muted text, so shadcn's muted surface maps to the
+     tinted panel colour instead. */
+  --color-muted-foreground: var(--muted);
+  --color-muted: var(--surface-2);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -55,112 +60,258 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Light. Neutral greys on the Dunn-Edwards Silver Spoon hue (Aja, 29 Sep 2026): the
+   earlier warm greige read as green. The orange and charcoal are the logo's. */
 :root {
-  /* Brand colours from the logo files (Drive: "SV Logo Hi Resolution Files"). */
-  --brand: #f07d22;
-  /* The logo orange is 2.8:1 on cream, too light for text. This darker one is 4.8:1. */
-  --brand-ink: #b4510b;
+  --ground: #efefed;
+  --surface: #ffffff;
+  --surface-2: #f6f6f5;
+  --line: #d9d9d6;
+  --line-2: #e5e5e3;
+  --text: #1a1a1a;
+  --muted: #5e5e5b;
+  --faint: #8b8b88;
+  --orange: #f07d22;
+  --orange-hover: #f68e3c;
+  /* The logo orange is too light for text on these grounds; this one is 4.8:1. */
+  --orange-ink: #b4510b;
+  --orange-soft: rgba(240, 125, 34, 0.12);
+  --on-orange: #161616;
   --charcoal: #3a3b3a;
-  --cream: #fbf7f2;
+  --green: #1e7a54;
+  --green-soft: rgba(30, 122, 84, 0.1);
+  --amber: #9a5a14;
+  --amber-soft: rgba(154, 90, 20, 0.14);
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-line: rgba(26, 26, 26, 0.1);
+  --glass-hi: rgba(255, 255, 255, 0.98);
+  --header-bg: rgba(239, 239, 237, 0.84);
+  --solid: #1a1a1a;
+  --solid-ink: #ffffff;
+  --seal-bg: #fffaf4;
+  --guilloche: rgba(240, 125, 34, 0.16);
+  --shadow-soft: 0 1px 2px rgba(26, 26, 26, 0.06), 0 20px 44px -22px rgba(26, 26, 26, 0.26);
+  --shadow-card: 0 26px 50px -30px rgba(20, 20, 20, 0.36), 0 2px 6px rgba(20, 20, 20, 0.06);
+  --shadow-lg: 0 40px 80px -44px rgba(20, 20, 20, 0.3), 0 14px 28px -18px rgba(20, 20, 20, 0.12);
+  --net-rgb: 240, 125, 34;
+  --net-hub-rgb: 180, 81, 11;
+  --net-line-a: 0.17;
+  --net-node-a: 0.55;
+  --net-spot-a: 0.42;
+  --skel: rgba(26, 26, 26, 0.1);
+  --skel-strong: rgba(26, 26, 26, 0.24);
+  --floor: rgba(20, 20, 20, 0.22);
+  --ring: rgba(26, 26, 26, 0.14);
+  --av-1: linear-gradient(135deg, #f07d22, #f5a55a);
+  --av-2: linear-gradient(135deg, #f5a55a, #ffd9b0);
+  --av-3: linear-gradient(135deg, #5fd39a, #c4f1d9);
+  --av-4: linear-gradient(135deg, #c9621a, #f5a55a);
+  --bezel: #111111;
+  --bezel-edge: #262626;
+  --cf-glow: rgba(240, 125, 34, 0.16);
+  --band-bg: #0b151b;
+  --band-bg-2: #04080a;
+  --band-glow: rgba(26, 88, 116, 0.62);
+  --band-text: #f4f4f2;
+  --band-muted: #9aa7ad;
+  --band-line: rgba(255, 255, 255, 0.09);
+  --logo-ink: #3a3b3a;
+  --f-sans: var(--font-geist), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --f-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-sheet: clamp(22px, 2.6vw, 34px);
+  --r-card: 20px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --background: #ffffff;
-  --foreground: #1c1d1c;
-  --card: #ffffff;
-  --card-foreground: #1c1d1c;
-  --popover: #ffffff;
-  --popover-foreground: #1c1d1c;
-  /* Orange buttons carry near-black text: white on #f07d22 is 2.9:1 and fails WCAG AA,
-     #161616 on it is 6.4:1. */
-  --primary: #f07d22;
-  --primary-foreground: #161616;
-  --secondary: #f4efe9;
-  --secondary-foreground: #1c1d1c;
-  --muted: #f4efe9;
-  --muted-foreground: #5b5c5b;
-  --accent: #fff1e5;
-  --accent-foreground: #1c1d1c;
+  /* shadcn's names, pointed at the tokens above so the ui components follow the theme. */
+  --background: var(--ground);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --primary: var(--orange);
+  --primary-foreground: var(--on-orange);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --accent: var(--orange-soft);
+  --accent-foreground: var(--text);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e8e2db;
-  --input: #e8e2db;
-  --ring: #f07d22;
+  --border: var(--line);
+  --input: var(--line);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--orange);
+  --sidebar-primary-foreground: var(--on-orange);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--orange);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #141414;
+    --surface: #1b1b1b;
+    --surface-2: #212121;
+    --line: #2c2c2c;
+    --line-2: #262626;
+    --text: #f2f2f0;
+    --muted: #a4a39f;
+    --faint: #7a7975;
+    --orange-ink: #f07d22;
+    --orange-soft: rgba(240, 125, 34, 0.16);
+    --green: #5fd39a;
+    --green-soft: rgba(95, 211, 154, 0.12);
+    --amber: #f5a55a;
+    --amber-soft: rgba(245, 165, 90, 0.16);
+    --glass: rgba(34, 34, 34, 0.58);
+    --glass-line: rgba(255, 255, 255, 0.08);
+    --glass-hi: rgba(255, 255, 255, 0.06);
+    --header-bg: rgba(20, 20, 20, 0.82);
+    --solid: #f2f2f0;
+    --solid-ink: #161616;
+    --seal-bg: #1e1a16;
+    --guilloche: rgba(240, 125, 34, 0.14);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 24px 48px -28px rgba(0, 0, 0, 0.85);
+    --shadow-card: 0 30px 60px -28px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 40px 90px -40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.015);
+    --net-hub-rgb: 245, 165, 90;
+    --net-line-a: 0.2;
+    --net-node-a: 0.7;
+    --net-spot-a: 0.5;
+    --skel: rgba(255, 255, 255, 0.08);
+    --skel-strong: rgba(255, 255, 255, 0.22);
+    --floor: rgba(0, 0, 0, 0.6);
+    --ring: rgba(255, 255, 255, 0.12);
+    --bezel: #050506;
+    --bezel-edge: #2a2b2e;
+    --cf-glow: rgba(240, 125, 34, 0.12);
+    --band-bg: #081014;
+    --band-bg-2: #030506;
+    --band-glow: rgba(26, 88, 116, 0.5);
+    --band-line: rgba(255, 255, 255, 0.08);
+    --logo-ink: #f2f2f0;
+    --destructive: oklch(0.704 0.191 22.216);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #141414;
+  --surface: #1b1b1b;
+  --surface-2: #212121;
+  --line: #2c2c2c;
+  --line-2: #262626;
+  --text: #f2f2f0;
+  --muted: #a4a39f;
+  --faint: #7a7975;
+  --orange-ink: #f07d22;
+  --orange-soft: rgba(240, 125, 34, 0.16);
+  --green: #5fd39a;
+  --green-soft: rgba(95, 211, 154, 0.12);
+  --amber: #f5a55a;
+  --amber-soft: rgba(245, 165, 90, 0.16);
+  --glass: rgba(34, 34, 34, 0.58);
+  --glass-line: rgba(255, 255, 255, 0.08);
+  --glass-hi: rgba(255, 255, 255, 0.06);
+  --header-bg: rgba(20, 20, 20, 0.82);
+  --solid: #f2f2f0;
+  --solid-ink: #161616;
+  --seal-bg: #1e1a16;
+  --guilloche: rgba(240, 125, 34, 0.14);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 24px 48px -28px rgba(0, 0, 0, 0.85);
+  --shadow-card: 0 30px 60px -28px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 40px 90px -40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.015);
+  --net-hub-rgb: 245, 165, 90;
+  --net-line-a: 0.2;
+  --net-node-a: 0.7;
+  --net-spot-a: 0.5;
+  --skel: rgba(255, 255, 255, 0.08);
+  --skel-strong: rgba(255, 255, 255, 0.22);
+  --floor: rgba(0, 0, 0, 0.6);
+  --ring: rgba(255, 255, 255, 0.12);
+  --bezel: #050506;
+  --bezel-edge: #2a2b2e;
+  --cf-glow: rgba(240, 125, 34, 0.12);
+  --band-bg: #081014;
+  --band-bg-2: #030506;
+  --band-glow: rgba(26, 88, 116, 0.5);
+  --band-line: rgba(255, 255, 255, 0.08);
+  --logo-ink: #f2f2f0;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
-    @apply font-sans;
-    /* The sticky header is 4rem tall; anchor links and focused elements land below it. */
+    -webkit-text-size-adjust: 100%;
+    overflow-x: clip;
+    /* Anchor links and focused elements land clear of the fixed corner controls. */
     scroll-padding-top: 5rem;
-    /* No double-tap zoom delay on taps, and no grey flash: every control has its own
-       hover and focus-visible states. */
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--f-sans);
+    font-size: 17px;
+    line-height: 1.55;
+    padding-inline: var(--gutter);
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
   h1,
   h2,
-  h3 {
+  h3,
+  h4 {
     text-wrap: balance;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
   }
   p,
   blockquote {
     text-wrap: pretty;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    html {
-      scroll-behavior: smooth;
+  a {
+    color: inherit;
+  }
+  img {
+    max-width: 100%;
+    display: block;
+  }
+  :focus-visible {
+    outline: 2px solid var(--orange-ink);
+    outline-offset: 3px;
+    border-radius: 8px;
+  }
+  [id] {
+    scroll-margin-top: 96px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
     }
   }
 }

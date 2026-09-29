@@ -146,3 +146,14 @@ export function posterUrl(story: Story, width: number) {
   const playbackId = story.video.providerMetadata.mux.playbackId;
   return `https://image.mux.com/${playbackId}/thumbnail.webp?time=8&width=${width}`;
 }
+
+/**
+ * A short, silent preview of the clip around the quote, as an animated image from Mux. Six
+ * seconds from just before the quote; Mux caps these at ten seconds and 640px wide.
+ */
+export function clipUrl(story: Story, width: number) {
+  const playbackId = story.video.providerMetadata.mux.playbackId;
+  const [m, s] = story.quoteAt.split(":").map(Number);
+  const start = Math.max(0, m * 60 + s - 1);
+  return `https://image.mux.com/${playbackId}/animated.webp?start=${start}&end=${start + 6}&width=${width}&fps=15`;
+}

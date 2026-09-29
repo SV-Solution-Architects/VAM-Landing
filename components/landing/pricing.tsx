@@ -1,81 +1,195 @@
-import { ShieldCheckIcon } from "lucide-react";
-import { TERMS_URL } from "@/lib/site";
-import { ACCESS_FEE, INTERVIEW_CAP, PLACEMENT_FEE, REPLACEMENT_DAYS, usd } from "@/lib/terms";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { START_BRIEF_URL, TERMS_URL } from "@/lib/site";
+import { ACCESS_FEE, PLACEMENT_FEE, REPLACEMENT_DAYS, usd } from "@/lib/terms";
+import { reduceMotion } from "@/lib/theme";
+import { Arrow, Check } from "./brand-symbols";
+
+// The Ledger mock's pricing: a tier switch, the two figures that matter, a dotted ledger,
+// and the guarantee set like a certificate. Every number is a constant from lib/terms.ts.
+const TIERS = [
+  { key: "standard", name: "Standard", fee: PLACEMENT_FEE.Standard },
+  { key: "executive", name: "Executive", fee: PLACEMENT_FEE.Executive },
+  { key: "specialist", name: "Specialist", fee: PLACEMENT_FEE.Specialist },
+] as const;
+type TierKey = (typeof TIERS)[number]["key"];
+
+/** Counts a displayed figure toward its target over about 700ms. */
+function useCountTo(target: number) {
+  const [shown, setShown] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    const start = from.current;
+    if (start === target || reduceMotion()) {
+      from.current = target;
+      setShown(target);
+      return;
+    }
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / 700);
+      const e = 1 - Math.pow(1 - p, 3);
+      setShown(Math.round(start + (target - start) * e));
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else from.current = target;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
+  return shown;
+}
 
 export function Pricing() {
-  const standardAtCheckout = PLACEMENT_FEE.Standard - ACCESS_FEE;
+  const [tierKey, setTierKey] = useState<TierKey>("standard");
+  const tier = TIERS.find((t) => t.key === tierKey)!;
+  const fee = useCountTo(tier.fee);
+  const due = useCountTo(tier.fee - ACCESS_FEE);
 
   return (
-    <section id="pricing" className="bg-cream py-20 md:py-24">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">What it costs</h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Two payments to Scale Virtually, both shown up front. Your VA&apos;s pay goes to
-            them directly.
+    <section className="band-sec tint" id="pricing" aria-labelledby="price-h">
+      <div className="wrap">
+        <div className="sec-head">
+          <p className="eyebrow">Pricing</p>
+          <h2 className="h2" id="price-h">
+            Pay once, <em>when you hire.</em>
+          </h2>
+          <p className="sub">
+            Opening the bench costs {usd(ACCESS_FEE)} per role. If you hire, that {usd(ACCESS_FEE)} comes off your placement fee. Your VA&apos;s
+            monthly pay goes to them directly, with no margin added.
           </p>
         </div>
-
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          <article className="flex flex-col rounded-2xl bg-white p-7 ring-1 ring-border">
-            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Marketplace access</h3>
-            <p className="mt-4">
-              <span className="text-4xl font-extrabold tracking-tight">{usd(ACCESS_FEE)}</span>
-              <span className="ml-2 text-muted-foreground">per role</span>
-            </p>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Opens every vetted profile for the role and up to {INTERVIEW_CAP} interview
-              requests. Credited toward your placement fee if you hire.
-            </p>
-          </article>
-
-          <article className="flex flex-col rounded-2xl bg-white p-7 ring-1 ring-border">
-            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Placement fee</h3>
-            <p className="mt-4">
-              <span className="text-muted-foreground">from </span>
-              <span className="text-4xl font-extrabold tracking-tight">{usd(PLACEMENT_FEE.Standard)}</span>
-              <span className="ml-2 text-muted-foreground">one-time</span>
-            </p>
-            <dl className="mt-4 divide-y divide-border text-sm">
-              {Object.entries(PLACEMENT_FEE).map(([tier, fee]) => (
-                <div key={tier} className="flex justify-between py-2">
-                  <dt className="text-muted-foreground">{tier}</dt>
-                  <dd className="font-semibold tabular-nums">{usd(fee)}</dd>
-                </div>
+        <div className="pricing-grid">
+          <div className="price-card">
+            <fieldset className="seg" id="tier-seg">
+              <legend className="vh">Placement tier</legend>
+              {TIERS.map((t) => (
+                <span key={t.key} style={{ display: "contents" }}>
+                  <input type="radio" name="tier" id={`tier-${t.key}`} value={t.key} checked={tierKey === t.key} onChange={() => setTierKey(t.key)} />
+                  <label htmlFor={`tier-${t.key}`}>{t.name}</label>
+                </span>
               ))}
-            </dl>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Your {usd(ACCESS_FEE)} is credited, so a Standard hire is {usd(standardAtCheckout)} at checkout.
+              <span className="seg-thumb" aria-hidden="true" />
+            </fieldset>
+            <div className="figs">
+              <div className="fig">
+                <span className="fig-label">One-time placement fee · {tier.name}</span>
+                <span className="fig-num">{usd(fee)}</span>
+              </div>
+              <div className="fig fig--due">
+                <span className="fig-label">At checkout after your {usd(ACCESS_FEE)} credit</span>
+                <span className="fig-num">{usd(due)}</span>
+              </div>
+            </div>
+            <p className="vh" aria-live="polite">
+              {tier.name}: placement fee {usd(tier.fee)}, {usd(tier.fee - ACCESS_FEE)} at checkout after your {usd(ACCESS_FEE)} credit.
             </p>
-          </article>
-
-          <article className="flex flex-col rounded-2xl bg-white p-7 ring-1 ring-border">
-            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Your VA&apos;s pay</h3>
-            <p className="mt-4 text-2xl font-extrabold tracking-tight">Paid directly to your VA</p>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Set in your placement agreement and paid to your VA, not to us. No margin added by
-              Scale Virtually.
+            <div className="ledger" aria-label="Cost breakdown">
+              <div className="lrow">
+                <span className="lk">
+                  <span>Marketplace access</span>
+                  <small>Paid when you open the bench for a role</small>
+                </span>
+                <span className="dots" />
+                <span className="lv">{usd(ACCESS_FEE)}</span>
+              </div>
+              <div className="lrow">
+                <span className="lk">
+                  <span>Placement fee, {tier.name}</span>
+                  <small>One time, when you hire</small>
+                </span>
+                <span className="dots" />
+                <span className="lv">{usd(fee)}</span>
+              </div>
+              <div className="lrow credit">
+                <span className="lk">
+                  <span>Access credit</span>
+                </span>
+                <span className="dots" />
+                <span className="lv">−{usd(ACCESS_FEE)}</span>
+              </div>
+              <div className="lrow total">
+                <span className="lk">
+                  <span>Due at checkout</span>
+                </span>
+                <span className="dots" />
+                <span className="lv">{usd(due)}</span>
+              </div>
+            </div>
+            <p className="pay-note">
+              <Check />
+              <span>Your VA&apos;s monthly pay goes to your VA directly. Scale Virtually adds no margin.</span>
             </p>
-          </article>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-4 rounded-2xl bg-charcoal p-7 text-white sm:flex-row sm:items-center sm:gap-6">
-          <ShieldCheckIcon className="size-10 shrink-0 text-brand" aria-hidden />
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold">{REPLACEMENT_DAYS}-day replacement guarantee</h3>
-            <p className="mt-1 text-sm leading-relaxed text-white/80">
-              If your VA isn&apos;t the right fit within {REPLACEMENT_DAYS} days of their first working
-              day, we find you a replacement at no extra placement fee.
-            </p>
+            <div className="price-cta">
+              <a className="btn btn-primary" href={START_BRIEF_URL} target="_blank" rel="noopener">
+                Start your hiring brief
+                <Arrow />
+              </a>
+              <a className="link-u" href={TERMS_URL} target="_blank" rel="noopener">
+                Marketplace terms
+              </a>
+            </div>
           </div>
-          <a
-            href={TERMS_URL}
-            // White, not orange: small orange text on charcoal is 4.1:1, under the 4.5:1
-            // WCAG AA asks of body-size text.
-            className="text-sm font-semibold text-white underline decoration-brand decoration-2 underline-offset-4 hover:decoration-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-          >
-            Read the marketplace terms
-          </a>
+
+          <aside className="cert" aria-labelledby="cert-h">
+            <div className="cert-inner">
+              <div className="cert-top">
+                <svg className="seal" viewBox="0 0 160 160" aria-hidden="true">
+                  <defs>
+                    <path id="seal-path" d="M80,80 m-60,0 a60,60 0 1,1 120,0 a60,60 0 1,1 -120,0" />
+                  </defs>
+                  <circle className="ring" cx="80" cy="80" r="77" />
+                  <circle className="ring2" cx="80" cy="80" r="46" />
+                  <g className="spin">
+                    <text>
+                      <textPath href="#seal-path" textLength="372" lengthAdjust="spacing">
+                        {REPLACEMENT_DAYS}-DAY REPLACEMENT GUARANTEE · SCALE VIRTUALLY ·
+                      </textPath>
+                    </text>
+                  </g>
+                  <use href="#svmark" x="58" y="58" width="44" height="44" />
+                </svg>
+                <div>
+                  <p className="eyebrow">Placement guarantee</p>
+                  <h3 id="cert-h">{REPLACEMENT_DAYS}-day replacement guarantee</h3>
+                </div>
+              </div>
+              <p className="cert-body">
+                If your VA isn&apos;t the right fit within {REPLACEMENT_DAYS} days of their first working day, Scale Virtually finds a replacement
+                at no extra placement fee.
+              </p>
+              <dl className="terms">
+                <div>
+                  <dt>Starts</dt>
+                  <dd>Your VA&apos;s first working day</dd>
+                </div>
+                <div>
+                  <dt>Replacement fee</dt>
+                  <dd>No extra placement fee</dd>
+                </div>
+                <div>
+                  <dt>One exception</dt>
+                  <dd>Mistreatment of the VA</dd>
+                </div>
+                <div>
+                  <dt>Term</dt>
+                  <dd>A guarantee, not a minimum term</dd>
+                </div>
+              </dl>
+              <div className="cert-sign">
+                <div>
+                  <span className="sn">Scale Virtually</span>
+                  <small>Placements team</small>
+                </div>
+                <span className="no">
+                  Every placement
+                  <br />
+                  {REPLACEMENT_DAYS} days
+                </span>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
